@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tanay's Watermark Tool</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <!-- Header -->
+        <div class="row justify-content-center">
+            <div class="col-md-8 text-center">
+                <h1 class="display-4 mb-3">
+                    <i class="fas fa-file-pdf text-danger me-3"></i>
+                    Tanay's Watermark Tool
+                </h1>
+                <p class="lead text-muted mb-5">
+                    Add diagonal watermarks to your PDF files quickly and easily
+                </p>
+            </div>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="row justify-content-center">
+                    <div class="col-md-8">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                                <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' }} me-2"></i>
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Main Form -->
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow-lg">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="card-title mb-0">
+                            <i class="fas fa-plus-circle me-2"></i>
+                            Add Watermark to PDF
+                        </h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <form method="POST" enctype="multipart/form-data" id="watermarkForm">
+                            <!-- PDF File Upload -->
+                            <div class="mb-4">
+                                <label for="pdf_file" class="form-label">
+                                    <i class="fas fa-file-upload me-2"></i>
+                                    Select PDF File
+                                </label>
+                                <input type="file" 
+                                       class="form-control form-control-lg" 
+                                       id="pdf_file" 
+                                       name="pdf_file" 
+                                       accept=".pdf"
+                                       required>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Maximum file size: 16MB. Only PDF files are allowed.
+                                </div>
+                            </div>
+
+                            <!-- Watermark Text Input -->
+                            <div class="mb-4">
+                                <label for="watermark_text" class="form-label">
+                                    <i class="fas fa-text-width me-2"></i>
+                                    Watermark Text
+                                </label>
+                                <input type="text" 
+                                       class="form-control form-control-lg" 
+                                       id="watermark_text" 
+                                       name="watermark_text" 
+                                       placeholder="Enter your watermark text"
+                                       maxlength="100"
+                                       required>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    This text will appear diagonally across each page of your PDF.
+                                </div>
+                            </div>
+
+                            <!-- Opacity Control -->
+                            <div class="mb-4">
+                                <label for="opacity" class="form-label">
+                                    <i class="fas fa-adjust me-2"></i>
+                                    Watermark Opacity
+                                </label>
+                                <div class="row align-items-center">
+                                    <div class="col-8">
+                                        <input type="range" 
+                                               class="form-range" 
+                                               id="opacity" 
+                                               name="opacity" 
+                                               min="0.1" 
+                                               max="1.0" 
+                                               step="0.1" 
+                                               value="0.2">
+                                    </div>
+                                    <div class="col-4">
+                                        <span class="badge bg-secondary" id="opacityValue">20%</span>
+                                    </div>
+                                </div>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Adjust how transparent the watermark appears on your PDF.
+                                </div>
+                            </div>
+
+                            <!-- Color Selection -->
+                            <div class="mb-4">
+                                <label for="color" class="form-label">
+                                    <i class="fas fa-palette me-2"></i>
+                                    Watermark Color
+                                </label>
+                                <div class="row align-items-center">
+                                    <div class="col-8">
+                                        <input type="color" 
+                                               class="form-control form-control-color" 
+                                               id="color" 
+                                               name="color" 
+                                               value="#b3b3b3" 
+                                               title="Choose watermark color">
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="color-presets d-flex gap-1">
+                                            <button type="button" class="btn btn-sm color-preset" data-color="#808080" style="background-color: #808080; width: 30px; height: 30px; border-radius: 50%;"></button>
+                                            <button type="button" class="btn btn-sm color-preset" data-color="#ff0000" style="background-color: #ff0000; width: 30px; height: 30px; border-radius: 50%;"></button>
+                                            <button type="button" class="btn btn-sm color-preset" data-color="#0000ff" style="background-color: #0000ff; width: 30px; height: 30px; border-radius: 50%;"></button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Choose a color for your watermark or use the preset options.
+                                </div>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                                    <i class="fas fa-magic me-2"></i>
+                                    Add Watermark & Download
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="row justify-content-center mt-5">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-question-circle me-2"></i>
+                            How to Use
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <ol class="list-group list-group-flush">
+                            <li class="list-group-item d-flex align-items-center">
+                                <span class="badge bg-primary rounded-pill me-3">1</span>
+                                <div>
+                                    <strong>Select your PDF file</strong>
+                                    <br>
+                                    <small class="text-muted">Choose a PDF file from your computer (max 16MB)</small>
+                                </div>
+                            </li>
+                            <li class="list-group-item d-flex align-items-center">
+                                <span class="badge bg-primary rounded-pill me-3">2</span>
+                                <div>
+                                    <strong>Enter watermark text</strong>
+                                    <br>
+                                    <small class="text-muted">Type the text you want to appear as a watermark</small>
+                                </div>
+                            </li>
+                            <li class="list-group-item d-flex align-items-center">
+                                <span class="badge bg-primary rounded-pill me-3">3</span>
+                                <div>
+                                    <strong>Click "Add Watermark & Download"</strong>
+                                    <br>
+                                    <small class="text-muted">The watermarked PDF will be automatically downloaded</small>
+                                </div>
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center mt-5 py-4">
+            <div class="container">
+                <p class="text-muted mb-0">
+                    <i class="fas fa-heart text-danger me-1"></i>
+                    Made with care by Tanay
+                </p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script>
+        // Update opacity display
+        document.getElementById('opacity').addEventListener('input', function() {
+            const opacityValue = document.getElementById('opacityValue');
+            const value = Math.round(this.value * 100);
+            opacityValue.textContent = value + '%';
+        });
+
+        // Color preset buttons
+        document.querySelectorAll('.color-preset').forEach(button => {
+            button.addEventListener('click', function() {
+                const color = this.dataset.color;
+                document.getElementById('color').value = color;
+            });
+        });
+
+        // Form submission handling
+        document.getElementById('watermarkForm').addEventListener('submit', function() {
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+            
+            // Reset button after 10 seconds (in case of errors)
+            setTimeout(function() {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }, 10000);
+        });
+
+        // File input validation
+        document.getElementById('pdf_file').addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                if (file.type !== 'application/pdf') {
+                    alert('Please select a PDF file.');
+                    this.value = '';
+                    return;
+                }
+                if (file.size > 16 * 1024 * 1024) {
+                    alert('File size must be less than 16MB.');
+                    this.value = '';
+                    return;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
